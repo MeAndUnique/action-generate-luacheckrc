@@ -156,8 +156,11 @@ local function findNamedLuaScripts(definitions, baseXmlFile, packagePath)
 			local fns = {}
 			findGlobals(fns, packagePath, element.attrs.file)
 			definitions[element.attrs.name] = fns
-			
 			return true
+		elseif element.children then
+			for _, child in ipairs(element.children) do
+				callFindGlobals(child)
+			end
 		end
 	end
 
@@ -295,6 +298,10 @@ local function findXmls(xmlFiles, xmlDefinitionsPath, packagePath)
 			fileName = fileName:match('.+/(.-).xml') or fileName:match('(.-).xml')
 			xmlFiles[fileName] = table.concat(packagePath) .. '/' .. element.attrs.source
 			return true
+		elseif element.children then
+			for _, child in ipairs(element.children) do
+				addXmlToTable(child)
+			end
 		end
 	end
 
