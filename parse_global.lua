@@ -251,8 +251,8 @@ end
 local function matchRelationshipScripts(templates)
 	for name, template in pairs(templates) do
 		local inheritedTemplate = template['inherit']
-		if inheritedTemplate and inheritedTemplate['functions'] then
-			for functionName, _ in pairs(inheritedTemplate['functions']) do template['functions'][functionName] = true end
+		if inheritedTemplate and templates[inheritedTemplate] then
+			for functionName, _ in pairs(templates[inheritedTemplate]['functions']) do template['functions'][functionName] = true end
 		end
 	end
 end
