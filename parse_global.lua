@@ -24,19 +24,6 @@ local packages = {
 -- General Functions (called from multiple places)
 --
 
--- Opens a file and returns the contents as a string
-local function loadFile(file)
-	local fhandle = io.open(file, 'r')
-	local string
-
-	if fhandle then
-		string = fhandle:read('*a')
-		fhandle:close()
-	end
-
-	return string
-end
-
 -- Calls luac and find included SETGLOBAL commands
 -- Adds them to supplied table 'globals'
 local function findGlobals(globals, directory, file)
@@ -299,14 +286,24 @@ end
 
 -- Search through a supplied fantasygrounds xml file to find other defined xml files.
 local function findXmls(xmlFiles, xmlDefinitionsPath, packagePath)
-	local data = loadFile(xmlDefinitionsPath)
 
-	for line in data:gmatch('[^\r\n]+') do
-		if line:match('<includefile.+/>') and not line:match('<!--.*<includefile.+/>.*-->') then
-			local sansRuleset = line:gsub('ruleset=".-"%s+', '')
-			local filePath = sansRuleset:match('<includefile%s+source="(.+)"%s*/>') or ''
-			local fileName = filePath:match('.+/(.-).xml') or filePath:match('(.-).xml')
-			if fileName then xmlFiles[fileName] = table.concat(packagePath) .. '/' .. filePath end
+	local function addXmlToTable(element)
+		if element.tag == 'includefile' then
+			local fileName = element.attrs.source
+			fileName = fileName:match('.+/(.-).xml') or fileName:match('(.-).xml')
+			xmlFiles[fileName] = table.concat(packagePath) .. '/' .. element.attrs.source
+			return true
+		end
+	end
+
+	local root = findXmlElement(parseXmlFile(xmlDefinitionsPath), { 'root' }) -- use first root element
+	if root then
+		for _, element in ipairs(root.children) do
+			if not addXmlToTable(element) then
+				for _, child in ipairs(element.children) do
+					addXmlToTable(child)
+				end
+			end
 		end
 	end
 end
