@@ -191,15 +191,18 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 		-- When supplied with a lua-xmlparser table for the <script> element,
 		-- this function adds any functions from it into a supplied table.
 		local function getScriptFromXml(parent, script)
-			local fns = {}
-			if script.attrs.file then
-				if not findGlobals(fns, packagePath, script.attrs.file) then
-					findAltScriptLocation(fns, packagePath, script.attrs.file)
+			if parent.attrs.name then
+				local fns = {}
+				if script.attrs.file then
+					if not findGlobals(fns, packagePath, script.attrs.file) then
+						findAltScriptLocation(fns, packagePath, script.attrs.file)
+					end
+				elseif script.children[1].text then
+					getFnsFromLuaInXml(fns, script.children[1].text)
 				end
-			elseif script.children[1].text then
-				getFnsFromLuaInXml(fns, script.children[1].text)
+
+				packageDefinitions[parent.attrs.name] = fns
 			end
-			packageDefinitions[parent.attrs.name] = fns
 		end
 
 		print(string.format('Integrating templates into interface object definitions in %s.', shortPackageName))
@@ -238,7 +241,7 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 			if element.tag == 'windowclass' then -- iterate through each windowclass
 				getWindowclassScript(element)
 				local sheetdata = findXmlElement(element, { 'sheetdata' }) -- use first sheetdata element
-				if element.attrs.name == 'npc_spells' and sheetdata then xmlScriptSearch(sheetdata) end
+				if sheetdata then xmlScriptSearch(sheetdata) end
 			end
 		end
 	end
