@@ -163,25 +163,18 @@ local function findNamedLuaScripts(definitions, baseXmlFile, packagePath)
 		if element.tag == 'script' and element.attrs.file then
 			callFindGlobals(element)
 		elseif element.children then
-			for _, child in ipairs(element.children) do
-				recursiveScriptSearch(child)
-			end
+			for _, child in ipairs(element.children) do recursiveScriptSearch(child) end
 		end
 	end
 
 	local root = findXmlElement(parseXmlFile(baseXmlFile), { 'root' })
-	if root then
-		for _, element in ipairs(root.children) do
-			recursiveScriptSearch(element)
-		end
-	end
+	if root then for _, element in ipairs(root.children) do recursiveScriptSearch(element) end end
 end
 
 -- Searches a provided table of XML files for script definitions.
 -- If element is windowclass, call getWindowclassScript.
 -- If element is not a template, call xmlScriptSearch
 local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, packagePath, shortPackageName)
-
 	-- Checks the first level of the provided xml data table for an element with the
 	-- tag 'script'. If found, it calls getScriptFromXml to map its globals and then calls
 	-- insertTableKeys to add any inherited template functions.
@@ -189,7 +182,7 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 
 		-- Copies keys from sourceTable to destinationTable with boolean value true
 		local function insertTableKeys(sourceTable, destinationTable)
-			for fn, _ in pairs(destinationTable) do sourceTable[fn] = true end
+			for fn, _ in pairs(sourceTable) do destinationTable[fn] = true end
 		end
 
 		-- When supplied with a lua-xmlparser table for the <script> element,
@@ -213,8 +206,13 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 			local script = findXmlElement(element, { 'script' })
 			if script then
 				getScriptFromXml(element, script)
-				if templates[element.tag] and packageDefinitions[element.attrs.name] then
-					insertTableKeys(packageDefinitions[element.attrs.name], templates[element.tag])
+				if templates[element.tag] then
+					if packageDefinitions[element.attrs.name] then
+						insertTableKeys(templates[element.tag]['functions'], packageDefinitions[element.attrs.name])
+					else
+						packageDefinitions[element.attrs.name] = {}
+						insertTableKeys(templates[element.tag]['functions'], packageDefinitions[element.attrs.name])
+					end
 				end
 			end
 		end
@@ -251,10 +249,10 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 end
 
 local function matchRelationshipScripts(templates)
-	for name, data in pairs(templates) do
-		local inheritedTemplate = templates[data['inherit']]
+	for name, template in pairs(templates) do
+		local inheritedTemplate = template['inherit']
 		if inheritedTemplate and inheritedTemplate['functions'] then
-			for functionName, _ in pairs(inheritedTemplate['functions']) do templates[name]['functions'][functionName] = true end
+			for functionName, _ in pairs(inheritedTemplate['functions']) do template['functions'][functionName] = true end
 		end
 	end
 end
@@ -265,7 +263,7 @@ local function findTemplateRelationships(templates, packagePath, xmlFiles)
 
 	-- When supplied with a lua-xmlparser table for the <script> element of a template,
 	-- this function adds any functions from it into a supplied table.
-	local function findTemplateScript(templates, packagePath, parent, element)
+	local function findTemplateScript(parent, element)
 		local script = findXmlElement(parent, { 'script' })
 		if script then
 			local templateFunctions = {}
@@ -284,7 +282,7 @@ local function findTemplateRelationships(templates, packagePath, xmlFiles)
 		local root = findXmlElement(parseXmlFile(xmlPath), { 'root' })
 		for _, element in ipairs(root.children) do
 			if element.tag == 'template' then
-				for _, template in ipairs(element.children) do findTemplateScript(templates, packagePath, template, element) end
+				for _, template in ipairs(element.children) do findTemplateScript(template, element) end
 			end
 		end
 	end
@@ -300,20 +298,14 @@ local function findXmls(xmlFiles, xmlDefinitionsPath, packagePath)
 			xmlFiles[fileName] = table.concat(packagePath) .. '/' .. element.attrs.source
 			return true
 		elseif element.children then
-			for _, child in ipairs(element.children) do
-				addXmlToTable(child)
-			end
+			for _, child in ipairs(element.children) do addXmlToTable(child) end
 		end
 	end
 
 	local root = findXmlElement(parseXmlFile(xmlDefinitionsPath), { 'root' }) -- use first root element
 	if root then
 		for _, element in ipairs(root.children) do
-			if not addXmlToTable(element) then
-				for _, child in ipairs(element.children) do
-					addXmlToTable(child)
-				end
-			end
+			if not addXmlToTable(element) then for _, child in ipairs(element.children) do addXmlToTable(child) end end
 		end
 	end
 end
@@ -394,29 +386,42 @@ for packageTypeName, packageTypeData in pairs(packages) do
 	findAllPackages(packageTypeData.packageList, packageTypeData['path'])
 
 	for _, packageName in ipairs(packageTypeData.packageList) do
-		print(string.format('Found %s. Getting details.', packageName))
+		print(string.format('Found %s. Getting details for template search.', packageName))
 		local packagePath = { datapath, packageTypeName, '/', packageName }
 		local baseXmlFile = findBaseXml(packagePath, packageTypeData['baseFile'])
-		local shortPackageName = getPackageName(baseXmlFile, packageName)
+		local shortPkgName = getPackageName(baseXmlFile, packageName)
 
-		print(string.format('Creating definition entry %s.', shortPackageName))
-		packageTypeData['definitions'][shortPackageName] = {}
-
-		print(string.format('Finding interface XML files in %s.', shortPackageName))
+		print(string.format('Finding interface XML files in %s for template search.', shortPkgName))
 		local interfaceXmlFiles = {}
 		findXmls(interfaceXmlFiles, baseXmlFile, packagePath)
 
-		print(string.format('Determining templates for %s.', shortPackageName))
+		print(string.format('Determining templates for %s.\n', shortPkgName))
 		findTemplateRelationships(templates, packagePath, interfaceXmlFiles)
 		matchRelationshipScripts(templates)
+	end
+	print('Template search complete; now finding scripts.\n')
+	for _, packageName in ipairs(packageTypeData.packageList) do
+		print(string.format('Found %s. Getting details.', packageName))
+		local packagePath = { datapath, packageTypeName, '/', packageName }
+		local baseXmlFile = findBaseXml(packagePath, packageTypeData['baseFile'])
+		local shortPkgName = getPackageName(baseXmlFile, packageName)
 
-		print(string.format('Finding scripts attached to interface objects and integrating template functions for %s.', shortPackageName))
-		findInterfaceScripts(packageTypeData['definitions'][shortPackageName], templates, interfaceXmlFiles, packagePath, shortPackageName)
+		print(string.format('Creating definition entry %s.', shortPkgName))
+		packageTypeData['definitions'][shortPkgName] = packageTypeData['definitions'][shortPkgName] or {}
 
-		print(string.format('Finding named scripts in %s.', shortPackageName))
-		findNamedLuaScripts(packageTypeData['definitions'][shortPackageName], baseXmlFile, packagePath)
+		print(string.format('Finding interface XML files in %s.', shortPkgName))
+		local interfaceXmlFiles = {}
+		findXmls(interfaceXmlFiles, baseXmlFile, packagePath)
 
-		print(string.format('Writing definitions for %s.\n', shortPackageName))
-		writeDefinitionsToFile(packageTypeData['definitions'], shortPackageName)
+		print(string.format('Finding interface object scripts and adding appropriate templates for %s.', shortPkgName))
+		findInterfaceScripts(
+						packageTypeData['definitions'][shortPkgName], templates, interfaceXmlFiles, packagePath, shortPkgName
+		)
+
+		print(string.format('Finding named scripts in %s.', shortPkgName))
+		findNamedLuaScripts(packageTypeData['definitions'][shortPkgName], baseXmlFile, packagePath)
+
+		print(string.format('Writing definitions for %s.\n', shortPkgName))
+		writeDefinitionsToFile(packageTypeData['definitions'], shortPkgName)
 	end
 end
