@@ -320,13 +320,13 @@ local function getPackageName(baseXmlFile, packageName)
 		local xmlProperties = findXmlElement(findXmlElement(parseXmlFile(baseXmlFile), { 'root' }), { 'properties' })
 		if xmlProperties then
 			for _, element in ipairs(xmlProperties.children) do
-				if element.tag == 'name' or element.tag == 'author' then
-					table.insert(altName, simplifyText(element.children[1]['text']))
+				if element.tag == 'author' then
+					table.insert(altName, 2, simplifyText(element.children[1]['text']))
+				elseif element.tag == 'name' then
+					table.insert(altName, 1, simplifyText(element.children[1]['text']))
 				end
 			end
 		end
-
-		table.sort(altName)
 
 		return table.concat(altName)
 	end
