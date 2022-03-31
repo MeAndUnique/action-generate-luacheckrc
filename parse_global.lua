@@ -322,17 +322,17 @@ end
 -- Returns as a lowercase string
 local function getPackageName(baseXmlFile, packageName)
 
+	-- Trims package name to prevent issues with luacheckrc
+	local function simplifyText(text)
+		text = text:gsub('.+:', '') -- remove prefix
+		text = text:gsub('%(.+%)', '') -- remove parenthetical
+		text = text:gsub('%W', '') -- remove non alphanumeric
+		return text
+	end
+
 	-- Reads supplied XML file to find name and author definitions.
 	-- Returns a simplified string to identify the extension
 	local function getSimpleName()
-
-		-- Trims package name to prevent issues with luacheckrc
-		local function simplifyText(text)
-			text = text:gsub('.+:', '') -- remove prefix
-			text = text:gsub('%(.+%)', '') -- remove parenthetical
-			text = text:gsub('%W', '') -- remove non alphanumeric
-			return text
-		end
 
 		local altName = { '' }
 		local xmlProperties = findXmlElement(findXmlElement(parseXmlFile(baseXmlFile), { 'root' }), { 'properties' })
@@ -350,7 +350,7 @@ local function getPackageName(baseXmlFile, packageName)
 	end
 	local shortPackageName = getSimpleName()
 
-	if shortPackageName == '' then shortPackageName = packageName end
+	if shortPackageName == '' then shortPackageName = simplifyText(packageName) end
 
 	-- prepend 'def' if 1st character isn't a-z
 	if string.sub(shortPackageName, 1, 1):match('%A') then shortPackageName = 'def' .. shortPackageName end
