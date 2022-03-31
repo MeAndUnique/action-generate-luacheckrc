@@ -151,15 +151,20 @@ end
 -- Search through a supplied fantasygrounds xml file to find other defined xml files.
 local function findNamedLuaScripts(definitions, baseXmlFile, packagePath)
 
-	local function callFindGlobals(element)
-		if element.tag == 'script' then
+	local function recursiveScriptSearch(element)
+
+		local function callFindGlobals(element)
 			local fns = {}
 			findGlobals(fns, packagePath, element.attrs.file)
 			definitions[element.attrs.name] = fns
 			return true
+		end
+
+		if element.tag == 'script' and element.attrs.file then
+			callFindGlobals(element)
 		elseif element.children then
 			for _, child in ipairs(element.children) do
-				callFindGlobals(child)
+				recursiveScriptSearch(child)
 			end
 		end
 	end
@@ -167,11 +172,7 @@ local function findNamedLuaScripts(definitions, baseXmlFile, packagePath)
 	local root = findXmlElement(parseXmlFile(baseXmlFile), { 'root' })
 	if root then
 		for _, element in ipairs(root.children) do
-			if not callFindGlobals(element) then
-				for _, child in ipairs(element.children) do
-					callFindGlobals(child)
-				end
-			end
+			recursiveScriptSearch(element)
 		end
 	end
 end
