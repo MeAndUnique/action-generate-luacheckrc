@@ -163,13 +163,24 @@ end
 
 -- Search through a supplied fantasygrounds xml file to find other defined xml files.
 local function findNamedLuaScripts(definitions, baseXmlFile, packagePath)
+
+	local function callFindGlobals(element)
+		if element.tag == 'script' then
+			local fns = {}
+			findGlobals(fns, packagePath, element.attrs.file)
+			definitions[element.attrs.name] = fns
+			
+			return true
+		end
+	end
+
 	local root = findXmlElement(parseXmlFile(baseXmlFile), { 'root' })
 	if root then
 		for _, element in ipairs(root.children) do
-			if element.tag == 'script' then
-				local fns = {}
-				findGlobals(fns, packagePath, element.attrs.file)
-				definitions[element.attrs.name] = fns
+			if not callFindGlobals(element) then
+				for _, child in ipairs(element.children) do
+					callFindGlobals(child)
+				end
 			end
 		end
 	end
