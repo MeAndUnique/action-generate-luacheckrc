@@ -205,7 +205,6 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 			end
 		end
 
-		print(string.format('Integrating templates into interface object definitions in %s.', shortPackageName))
 		for _, element in ipairs(sheetdata.children) do
 			local script = findXmlElement(element, { 'script' })
 			if script then
@@ -403,7 +402,7 @@ for packageTypeName, packageTypeData in pairs(packages) do
 		findTemplateRelationships(templates, packagePath, interfaceXmlFiles)
 		matchRelationshipScripts(templates)
 
-		print(string.format('Finding scripts attached to interface objects for %s.', shortPackageName))
+		print(string.format('Finding scripts attached to interface objects and integrating template functions for %s.', shortPackageName))
 		findInterfaceScripts(packageTypeData['definitions'][shortPackageName], templates, interfaceXmlFiles, packagePath, shortPackageName)
 
 		print(string.format('Finding named scripts in %s.', shortPackageName))
