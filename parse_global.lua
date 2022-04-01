@@ -6,13 +6,15 @@ local parseXmlFile = require('xmlparser').parseFile
 
 -- Datatypes
 local packages = {
-	['rulesets'] = {
+	[1] = {
+		['name'] = 'rulesets',
 		['path'] = datapath .. 'rulesets/',
 		['baseFile'] = 'base.xml',
 		['definitions'] = {},
 		['packageList'] = {},
 	},
-	['extensions'] = {
+	[2] = {
+		['name'] = 'extensions',
 		['path'] = datapath .. 'extensions/',
 		['baseFile'] = 'extension.xml',
 		['definitions'] = {},
@@ -26,7 +28,7 @@ local packages = {
 
 -- Calls luac and find included SETGLOBAL commands
 -- Adds them to supplied table 'globals'
-local function findGlobals(globals, directory, file)
+local function findGlobals(globals, filePath)
 
 	local function executeCapture(command)
 		local file = assert(io.popen(command, 'r'))
@@ -38,11 +40,9 @@ local function findGlobals(globals, directory, file)
 		return str
 	end
 
-	local concatPath = table.concat(directory) .. '/' .. file
-
-	if lfs.touch(concatPath) then
-		executeCapture('perl -e \'s/\\xef\\xbb\\xbf//;\' -pi ' .. concatPath)
-		local content = executeCapture(string.format('%s -l -p ' .. concatPath, 'luac'))
+	if lfs.touch(filePath) then
+		executeCapture('perl -e \'s/\\xef\\xbb\\xbf//;\' -pi ' .. filePath)
+		local content = executeCapture(string.format('%s -l -p ' .. filePath, 'luac'))
 
 		for line in content:gmatch('[^\r\n]+') do
 			if line:match('SETGLOBAL%s+') and not line:match('%s+;%s+(_)%s*') then
@@ -88,7 +88,7 @@ local function getFnsFromLuaInXml(fns, string)
 	tempFile:write(script)
 	tempFile:close()
 
-	findGlobals(fns, { datapath }, 'xmlscript.tmp')
+	findGlobals(fns, datapath .. 'xmlscript.tmp')
 
 	os.remove(tempFilePath)
 end
@@ -96,11 +96,11 @@ end
 -- Searches other rulesets for provided lua file name.
 -- If found, adds to provided table. Package path is prepended to file path.
 local function findAltScriptLocation(templateFunctions, packagePath, filePath)
-	for _, packageName in ipairs(packages.rulesets.packageList) do
+	for _, packageName in ipairs(packages[1].packageList) do
 		if packageName ~= packagePath[4] then
 			local altPackagePath = packagePath
 			altPackagePath[4] = packageName
-			findGlobals(templateFunctions, altPackagePath, filePath)
+			findGlobals(templateFunctions, table.concat(altPackagePath) .. '/' .. filePath)
 		end
 	end
 end
@@ -155,7 +155,7 @@ local function findNamedLuaScripts(definitions, baseXmlFile, packagePath)
 
 		local function callFindGlobals(element)
 			local fns = {}
-			findGlobals(fns, packagePath, element.attrs.file)
+			findGlobals(fns, table.concat(packagePath) .. '/' .. element.attrs.file)
 			definitions[element.attrs.name] = fns
 			return true
 		end
@@ -191,13 +191,13 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 			if parent.attrs.name then
 				local fns = {}
 				if script.attrs.file then
-					if not findGlobals(fns, packagePath, script.attrs.file) then
+					if not findGlobals(fns, table.concat(packagePath) .. '/' .. script.attrs.file) then
 						findAltScriptLocation(fns, packagePath, script.attrs.file)
 					end
 				elseif script.children[1].text then
 					getFnsFromLuaInXml(fns, script.children[1].text)
 				end
-
+	
 				packageDefinitions[parent.attrs.name] = fns
 			end
 		end
@@ -207,12 +207,7 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 			if script then
 				getScriptFromXml(element, script)
 				if templates[element.tag] then
-					if packageDefinitions[element.attrs.name] then
-						insertTableKeys(templates[element.tag]['functions'], packageDefinitions[element.attrs.name])
-					else
-						packageDefinitions[element.attrs.name] = {}
-						insertTableKeys(templates[element.tag]['functions'], packageDefinitions[element.attrs.name])
-					end
+					insertTableKeys(templates[element.tag]['functions'], packageDefinitions[element.attrs.name])
 				end
 			end
 		end
@@ -226,7 +221,7 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 		if script then
 			local fns = {}
 			if script.attrs.file then
-				if not findGlobals(fns, packagePath, script.attrs.file) then
+				if not findGlobals(fns, table.concat(packagePath) .. '/' .. script.attrs.file) then
 					findAltScriptLocation(fns, packagePath, script.attrs.file)
 				end
 			elseif script.children[1] and script.children[1].text then
@@ -268,7 +263,7 @@ local function findTemplateRelationships(templates, packagePath, xmlFiles)
 		if script then
 			local templateFunctions = {}
 			if script.attrs.file then
-				if not findGlobals(templateFunctions, packagePath, script.attrs.file) then
+				if not findGlobals(templateFunctions, table.concat(packagePath) .. '/' .. script.attrs.file) then
 					findAltScriptLocation(templateFunctions, packagePath, script.attrs.file)
 				end
 			elseif script.children[1].text then
@@ -381,13 +376,13 @@ end
 
 local templates = {}
 -- Iterate through package types defined in packageTypes
-for packageTypeName, packageTypeData in pairs(packages) do
-	print(string.format('Searching for %s', packageTypeName))
+for _, packageTypeData in ipairs(packages) do
+	print(string.format('Searching for %s', packageTypeData['name']))
 	findAllPackages(packageTypeData.packageList, packageTypeData['path'])
 
 	for _, packageName in ipairs(packageTypeData.packageList) do
 		print(string.format('Found %s. Getting details for template search.', packageName))
-		local packagePath = { datapath, packageTypeName, '/', packageName }
+		local packagePath = { datapath, packageTypeData['name'], '/', packageName }
 		local baseXmlFile = findBaseXml(packagePath, packageTypeData['baseFile'])
 		local shortPkgName = getPackageName(baseXmlFile, packageName)
 
@@ -399,15 +394,16 @@ for packageTypeName, packageTypeData in pairs(packages) do
 		findTemplateRelationships(templates, packagePath, interfaceXmlFiles)
 		matchRelationshipScripts(templates)
 	end
+
 	print('Template search complete; now finding scripts.\n')
 	for _, packageName in ipairs(packageTypeData.packageList) do
 		print(string.format('Found %s. Getting details.', packageName))
-		local packagePath = { datapath, packageTypeName, '/', packageName }
+		local packagePath = { datapath, packageTypeData['name'], '/', packageName }
 		local baseXmlFile = findBaseXml(packagePath, packageTypeData['baseFile'])
 		local shortPkgName = getPackageName(baseXmlFile, packageName)
 
 		print(string.format('Creating definition entry %s.', shortPkgName))
-		packageTypeData['definitions'][shortPkgName] = packageTypeData['definitions'][shortPkgName] or {}
+		packageTypeData['definitions'][shortPkgName] = {}
 
 		print(string.format('Finding interface XML files in %s.', shortPkgName))
 		local interfaceXmlFiles = {}
