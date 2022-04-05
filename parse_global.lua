@@ -208,7 +208,7 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 			local script = findXmlElement(element, { 'script' })
 			if script then
 				getScriptFromXml(element, script)
-				if templates[element.tag] and packageDefinitions[element.attrs.name] then
+				if templates[element.tag] and templates[element.tag].functions and packageDefinitions[element.attrs.name] then
 					insertTableKeys(templates[element.tag].functions, packageDefinitions[element.attrs.name])
 				end
 			end
@@ -247,9 +247,13 @@ end
 
 local function matchRelationshipScripts(templates)
 	for _, template in pairs(templates) do
-		local inheritedTemplate = template.inherit
-		if inheritedTemplate and templates[inheritedTemplate] then
-			for functionName, _ in pairs(templates[inheritedTemplate].functions) do template.functions[functionName] = true end
+		local inheritedTemplates = template.inherit
+		if inheritedTemplates then
+			for inherit, _ in pairs(inheritedTemplates) do
+				if inherit and templates[inherit] and templates[inherit].functions and template.functions then
+					for functionName, _ in pairs(templates[inherit].functions) do template.functions[functionName] = true end
+				end
+			end
 		end
 	end
 end
@@ -271,7 +275,7 @@ local function findTemplateRelationships(templates, packagePath, xmlFiles)
 			elseif script.children[1].text then
 				getFnsFromLuaInXml(templateFunctions, script.children[1].text)
 			end
-			templates[element.attrs.name] = { ['inherit'] = parent.tag, ['functions'] = templateFunctions }
+			templates[element.attrs.name] = { ['inherit'] = { [parent.tag] = true }, ['functions'] = templateFunctions }
 		end
 	end
 
@@ -570,9 +574,6 @@ local function getAPIfunctions(templates)
 					['setSize'] = true,
 					['setTooltipText'] = true,
 					['share'] = true,
-					['close'] = true,
-					['close'] = true,
-					['close'] = true,
 				},
 			},
 			['widgetcontainer'] = {
@@ -656,7 +657,15 @@ local function getAPIfunctions(templates)
 					['setTooltipText'] = true,
 					['setValue'] = true,
 				},
-				['inherit'] = 'windowcontrol',
+				['inherit'] = {
+					['windowcontrol'] = true,
+				},
+			},
+			['buttonfield'] = {
+				['inherit'] = {
+					['databasecontrol'] = true,
+					['buttoncontrol'] = true,
+				},
 			},
 			['textwidget'] = {
 				['functions'] = {
@@ -666,7 +675,9 @@ local function getAPIfunctions(templates)
 					['setMaxWidth'] = true,
 					['setText'] = true,
 				},
-				['inherit'] = 'widget',
+				['inherit'] = {
+					['widget'] = true,
+				},
 			},
 			['bitmapwidget'] = {
 				['functions'] = {
@@ -675,7 +686,9 @@ local function getAPIfunctions(templates)
 					['setColor'] = true,
 					['setSize'] = true,
 				},
-				['inherit'] = 'widget',
+				['inherit'] = {
+					['widget'] = true
+				},
 			},
 			['textbasecontrol'] = {
 				['functions'] = {
@@ -705,7 +718,9 @@ local function getAPIfunctions(templates)
 					['setUnderline'] = true,
 					['setValue'] = true,
 				},
-				['inherit'] = 'windowcontrol',
+				['inherit'] = {
+					['windowcontrol'] = true,
+				},
 			},
 		}
 	end
@@ -713,13 +728,23 @@ local function getAPIfunctions(templates)
 	local apiDefinitions = getApiDefinitions()
 
 	for object, data in pairs(apiDefinitions) do
-		for fn, _ in pairs(data.functions) do
-			if not templates[object] or not templates[object].functions then
-				templates[object] = {}
-				templates[object].functions = {}
+		if data.functions then
+			for fn, _ in pairs(data.functions) do
+				if not templates[object] or not templates[object].functions then
+					templates[object] = {}
+					templates[object].functions = {}
+				end
+				templates[object].functions[fn] = true
 			end
-			templates[object].functions[fn] = true
-			templates[object].inherit = data.inherit
+		end
+		if data.inherit then
+			for template, _ in pairs(data.inherit) do
+				if not templates[object] or not templates[object].inherit then
+					templates[object] = {}
+					templates[object].inherit = {}
+				end
+				templates[object].inherit[template] = true
+			end
 		end
 	end
 end
