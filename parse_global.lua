@@ -428,6 +428,7 @@ local function getAPIfunctions(templates)
 					['setTooltipText'] = true,
 					['setVisible'] = true,
 				},
+				['inherit'] = {},
 			},
 			['widget'] = {
 				['functions'] = {
@@ -441,6 +442,7 @@ local function getAPIfunctions(templates)
 					['setRadialPosition'] = true,
 					['setVisible'] = true,
 				},
+				['inherit'] = {},
 			},
 			['dragdata'] = {
 				['functions'] = {
@@ -485,6 +487,7 @@ local function getAPIfunctions(templates)
 					['setTokenData'] = true,
 					['setType'] = true,
 				},
+				['inherit'] = {},
 			},
 			['databasenode'] = {
 				['functions'] = {
@@ -534,6 +537,7 @@ local function getAPIfunctions(templates)
 					['updateChildCategory'] = true,
 					['updateVersion'] = true,
 				},
+				['inherit'] = {},
 			},
 			['windowinstance'] = {
 				['functions'] = {
@@ -575,13 +579,9 @@ local function getAPIfunctions(templates)
 					['setTooltipText'] = true,
 					['share'] = true,
 				},
+				['inherit'] = {},
 			},
-			['widgetcontainer'] = {
-				['functions'] = {
-					['addBitmapWidget'] = true,
-					['addTextWidget'] = true,
-				},
-			},
+			['widgetcontainer'] = { ['functions'] = { ['addBitmapWidget'] = true, ['addTextWidget'] = true }, ['inherit'] = {} },
 			['tokeninstance'] = {
 				['functions'] = {
 					['addUnderlay'] = true,
@@ -641,6 +641,7 @@ local function getAPIfunctions(templates)
 					['setTargetable'] = true,
 					['setVisible'] = true,
 				},
+				['inherit'] = {},
 			},
 			['buttoncontrol'] = {
 				['functions'] = {
@@ -657,16 +658,152 @@ local function getAPIfunctions(templates)
 					['setTooltipText'] = true,
 					['setValue'] = true,
 				},
-				['inherit'] = {
-					['windowcontrol'] = true,
-				},
+				['inherit'] = { ['windowcontrol'] = true },
 			},
-			['buttonfield'] = {
-				['inherit'] = {
-					['databasecontrol'] = true,
-					['buttoncontrol'] = true,
+			['tokencontrol'] = {
+				['functions'] = {
+					['getPrototype'] = true,
+					['onValueChanged'] = true,
+					['populateFromImageNode'] = true,
+					['setPrototype'] = true,
 				},
+				['inherit'] = { ['windowcontrol'] = true },
 			},
+			['tokenbag'] = {
+				['functions'] = { ['getZoom'] = true, ['setZoom'] = true },
+				['inherit'] = { ['windowcontrol'] = true },
+			},
+			['subwindow'] = {
+				['functions'] = { ['getValue'] = true, ['onInstanceCreated'] = true, ['setValue'] = true },
+				['inherit'] = { ['windowcontrol'] = true },
+			},
+			['stringcontrol'] = {
+				['functions'] = { ['getEmptyText'] = true, ['onValueChanged'] = true, ['setEmptyText'] = true },
+				['inherit'] = { ['windowcontrol'] = true, ['textbasecontrol'] = true },
+			},
+			['scrollbarcontrol'] = { ['functions'] = { ['setTarget'] = true }, ['inherit'] = { ['windowcontrol'] = true } },
+			['portraitselectioncontrol'] = {
+				['functions'] = { ['activate'] = true, ['getFile'] = true, ['setFile'] = true },
+				['inherit'] = { ['windowcontrol'] = true },
+			},
+			['genericcontrol'] = {
+				['functions'] = { ['hasIcon'] = true, ['setColor'] = true, ['setIcon'] = true },
+				['inherit'] = { ['windowcontrol'] = true },
+			},
+			['databasecontrol'] = { ['functions'] = { ['getDatabaseNode'] = true }, ['inherit'] = {} },
+			['diecontrol'] = {
+				['functions'] = {
+					['addDie'] = true,
+					['getDice'] = true,
+					['isEmpty'] = true,
+					['onValueChanged'] = true,
+					['reset'] = true,
+					['setDice'] = true,
+				},
+				['inherit'] = { ['windowcontrol'] = true },
+			},
+			['chatwindow'] = {
+				['functions'] = {
+					['addMessage'] = true,
+					['clear'] = true,
+					['deliverMessage'] = true,
+					['onDiceLanded'] = true,
+					['onDiceTotal'] = true,
+					['onReceiveMessage'] = true,
+					['throwDice'] = true,
+				},
+				['inherit'] = { ['windowcontrol'] = true },
+			},
+			['formattedtextcontrol'] = {
+				['functions'] = {
+					['isEmpty'] = true,
+					['onGainFocus'] = true,
+					['onLoseFocus'] = true,
+					['onValueChanged'] = true,
+					['setFocus'] = true,
+				},
+				['inherit'] = { ['windowcontrol'] = true },
+			},
+			['imagecontrol'] = {
+				['functions'] = {
+					['addToken'] = true,
+					['clearSelectedTokens'] = true,
+					['deleteDrawing'] = true,
+					['enableGridPlacement'] = true,
+					['getCursorMode'] = true,
+					['getDistanceBetween'] = true,
+					['getDrawingTool'] = true,
+					['getGridHexElementDimensions'] = true,
+					['getGridOffset'] = true,
+					['getGridSize'] = true,
+					['getGridSnap'] = true,
+					['getGridType'] = true,
+					['getImageSize'] = true,
+					['getMaskTool'] = true,
+					['getSelectedTokens'] = true,
+					['getTokenLockState'] = true,
+					['getTokenOrientationCount'] = true,
+					['getTokenScale'] = true,
+					['getTokens'] = true,
+					['getTokensWithinDistance'] = true,
+					['getViewpoint'] = true,
+					['hasDrawing'] = true,
+					['hasGrid'] = true,
+					['hasMask'] = true,
+					['hasTokens'] = true,
+					['isTokenSelected'] = true,
+					['onCursorModeChanged'] = true,
+					['onDrawStateChanged'] = true,
+					['onDrawingSizeChanged'] = true,
+					['onGridStateChanged'] = true,
+					['onMaskingStateChanged'] = true,
+					['onMeasurePointer'] = true,
+					['onMeasureVector'] = true,
+					['onPointerSnap'] = true,
+					['onTargetSelect'] = true,
+					['onTokenAdded'] = true,
+					['onTokenSnap'] = true,
+					['preload'] = true,
+					['resetPointers'] = true,
+					['selectToken'] = true,
+					['setCursorMode'] = true,
+					['setDrawingSize'] = true,
+					['setDrawingTool'] = true,
+					['setGridOffset'] = true,
+					['setGridSize'] = true,
+					['setGridSnap'] = true,
+					['setGridToolType'] = true,
+					['setGridType'] = true,
+					['setMaskEnabled'] = true,
+					['setMaskTool'] = true,
+					['setTokenLockState'] = true,
+					['setTokenOrientationCount'] = true,
+					['setTokenOrientationMode'] = true,
+					['setTokenScale'] = true,
+					['setViewpoint'] = true,
+					['setViewpointCenter'] = true,
+					['snapToGrid'] = true,
+				},
+				['inherit'] = { ['databasecontrol'] = true, ['windowcontrol'] = true },
+			},
+			['chatentry'] = {
+				['functions'] = { ['onDeliverMessage'] = true, ['onSlashCommand'] = true },
+				['inherit'] = { ['windowcontrol'] = true, ['textbasecontrol'] = true },
+			},
+			['buttonfield'] = { ['functions'] = {}, ['inherit'] = { ['databasecontrol'] = true, ['buttoncontrol'] = true } },
+			['windowreferencefield'] = {
+				['functions'] = {},
+				['inherit'] = { ['databasecontrol'] = true, ['windowreferencecontrol'] = true },
+			},
+			['tokenfield'] = { ['functions'] = {}, ['inherit'] = { ['databasecontrol'] = true, ['tokencontrol'] = true } },
+			['stringfield'] = { ['functions'] = {}, ['inherit'] = { ['databasecontrol'] = true, ['stringfield'] = true } },
+			['numberfield'] = { ['functions'] = {}, ['inherit'] = { ['databasecontrol'] = true, ['numbercontrol'] = true } },
+			['diefield'] = { ['functions'] = {}, ['inherit'] = { ['databasecontrol'] = true, ['diecontrol'] = true } },
+			['formattedtextfield'] = {
+				['functions'] = {},
+				['inherit'] = { ['databasecontrol'] = true, ['formattedtextcontrol'] = true },
+			},
+			['scrollercontrol'] = { ['functions'] = {}, ['inherit'] = { ['windowcontrol'] = true } },
 			['textwidget'] = {
 				['functions'] = {
 					['getText'] = true,
@@ -675,20 +812,74 @@ local function getAPIfunctions(templates)
 					['setMaxWidth'] = true,
 					['setText'] = true,
 				},
-				['inherit'] = {
-					['widget'] = true,
+				['inherit'] = { ['widget'] = true },
+			},
+			['numbercontrol'] = {
+				['functions'] = {
+					['getFont'] = true,
+					['getMaxValue'] = true,
+					['getMinValue'] = true,
+					['getValue'] = true,
+					['hasFocus'] = true,
+					['onChar'] = true,
+					['onEnter'] = true,
+					['onGainFocus'] = true,
+					['onLoseFocus'] = true,
+					['onTab'] = true,
+					['onValueChanged'] = true,
+					['setColor'] = true,
+					['setDescriptionField'] = true,
+					['setDescriptionText'] = true,
+					['setFocus'] = true,
+					['setFont'] = true,
+					['setMaxValue'] = true,
+					['setMinValue'] = true,
+					['setValue'] = true,
 				},
+				['inherit'] = { ['windowcontrol'] = true },
+			},
+			['windowreferencecontrol'] = {
+				['functions'] = {
+					['activate'] = true,
+					['getTargetDatabaseNode'] = true,
+					['getValue'] = true,
+					['isEmpty'] = true,
+					['onValueChanged'] = true,
+					['setIcons'] = true,
+					['setValue'] = true,
+				},
+				['inherit'] = { ['windowcontrol'] = true },
+			},
+			['windowlist'] = {
+				['functions'] = {
+					['applyFilter'] = true,
+					['applySort'] = true,
+					['closeAll'] = true,
+					['createWindow'] = true,
+					['createWindowWithClass'] = true,
+					['getColumnWidth'] = true,
+					['getNextWindow'] = true,
+					['getPrevWindow'] = true,
+					['getWindowAt'] = true,
+					['getWindowCount'] = true,
+					['getWindows'] = true,
+					['hasFocus'] = true,
+					['onFilter'] = true,
+					['onGainFocus'] = true,
+					['onListChanged'] = true,
+					['onListRearranged'] = true,
+					['onLoseFocus'] = true,
+					['onSortCompare'] = true,
+					['scrollToWindow'] = true,
+					['setColumnWidth'] = true,
+					['setDatabaseNode'] = true,
+					['setFocus'] = true,
+				},
+				['inherit'] = { ['windowcontrol'] = true, ['databasecontrol'] = true },
 			},
 			['bitmapwidget'] = {
-				['functions'] = {
-					['getBitmapName'] = true,
-					['setBitmap'] = true,
-					['setColor'] = true,
-					['setSize'] = true,
-				},
-				['inherit'] = {
-					['widget'] = true
-				},
+				['functions'] = { ['getBitmapName'] = true, ['setBitmap'] = true, ['setColor'] = true, ['setSize'] = true },
+				['inherit'] = { ['widget'] = true },
 			},
 			['textbasecontrol'] = {
 				['functions'] = {
@@ -718,9 +909,7 @@ local function getAPIfunctions(templates)
 					['setUnderline'] = true,
 					['setValue'] = true,
 				},
-				['inherit'] = {
-					['windowcontrol'] = true,
-				},
+				['inherit'] = { ['windowcontrol'] = true },
 			},
 		}
 	end
@@ -728,24 +917,13 @@ local function getAPIfunctions(templates)
 	local apiDefinitions = getApiDefinitions()
 
 	for object, data in pairs(apiDefinitions) do
-		if data.functions then
-			for fn, _ in pairs(data.functions) do
-				if not templates[object] or not templates[object].functions then
-					templates[object] = {}
-					templates[object].functions = {}
-				end
-				templates[object].functions[fn] = true
-			end
+		if not templates[object] or not templates[object].functions then
+			templates[object] = {}
+			templates[object].functions = {}
+			templates[object].inherit = {}
 		end
-		if data.inherit then
-			for template, _ in pairs(data.inherit) do
-				if not templates[object] or not templates[object].inherit then
-					templates[object] = {}
-					templates[object].inherit = {}
-				end
-				templates[object].inherit[template] = true
-			end
-		end
+		for fn, _ in pairs(data.functions) do templates[object].functions[fn] = true end
+		for template, _ in pairs(data.inherit) do templates[object].inherit[template] = true end
 	end
 end
 
