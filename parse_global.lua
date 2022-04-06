@@ -268,17 +268,15 @@ local function findTemplateRelationships(templates, packagePath, xmlFiles)
 	-- this function adds any functions from it into a supplied table.
 	local function findTemplateScript(parent, element)
 		local script = findXmlElement(parent, { 'script' })
-		if script then
-			local templateFunctions = {}
-			if script.attrs.file then
-				if not findGlobals(templateFunctions, table.concat(packagePath) .. '/' .. script.attrs.file) then
-					findAltScriptLocation(templateFunctions, packagePath, script.attrs.file)
-				end
-			elseif script.children[1].text then
-				getFnsFromLuaInXml(templateFunctions, script.children[1].text)
+		local templateFunctions = {}
+		if script and script.attrs.file then
+			if not findGlobals(templateFunctions, table.concat(packagePath) .. '/' .. script.attrs.file) then
+				findAltScriptLocation(templateFunctions, packagePath, script.attrs.file)
 			end
-			templates[element.attrs.name] = { ['inherit'] = { [parent.tag] = true }, ['functions'] = templateFunctions }
+		elseif script and script.children[1].text then
+			getFnsFromLuaInXml(templateFunctions, script.children[1].text)
 		end
+		templates[element.attrs.name] = { ['inherit'] = { [parent.tag] = true }, ['functions'] = templateFunctions }
 	end
 
 	for _, xmlPath in pairs(xmlFiles) do
