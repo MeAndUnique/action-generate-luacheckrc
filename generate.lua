@@ -1,7 +1,7 @@
 -- Config
 local dataPath = './.fg/'
 
-local stdBase = 'lua51+fg+fgfunctions+corerpg'
+local stdBase = 'lua51+fg+corerpg'
 local stdString = arg[1] or ''
 local headerFileName = arg[2] or '.luacheckrc_header'
 local outputFile = arg[3] or '.luacheckrc'
