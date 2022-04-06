@@ -61,7 +61,7 @@ jobs:
         std: '+dnd5e+coinsweight'
 
     - name: Create pull request
-      uses: peter-evans/create-pull-request@v3
+      uses: peter-evans/create-pull-request@v4
       with:
         title: Update .luacheckrc
         commit-message: "test: update .luacheckrc"
