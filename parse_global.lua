@@ -66,7 +66,7 @@ local function findXmlElement(root, searchStrings)
 end
 
 local function simplifyObjectName(string)
-	if string then string:gsub('[^%w_]', '') end
+	if string then string:gsub('%-', '_') end
 	return string
 end
 
