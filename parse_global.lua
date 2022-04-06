@@ -192,11 +192,11 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 		local function getScriptFromXml(parent, script)
 			if parent.attrs.name then
 				local fns = {}
-				if script.attrs.file then
+				if script and script.attrs.file then
 					if not findGlobals(fns, table.concat(packagePath) .. '/' .. script.attrs.file) then
 						findAltScriptLocation(fns, packagePath, script.attrs.file)
 					end
-				elseif script.children[1].text then
+				elseif script and script.children[1].text then
 					getFnsFromLuaInXml(fns, script.children[1].text)
 				end
 
@@ -206,11 +206,9 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 
 		for _, element in ipairs(sheetdata.children) do
 			local script = findXmlElement(element, { 'script' })
-			if script then
-				getScriptFromXml(element, script)
-				if templates[element.tag] and templates[element.tag].functions and packageDefinitions[element.attrs.name] then
-					insertTableKeys(templates[element.tag].functions, packageDefinitions[element.attrs.name])
-				end
+			getScriptFromXml(element, script)
+			if templates[element.tag] and templates[element.tag].functions and packageDefinitions[element.attrs.name] then
+				insertTableKeys(templates[element.tag].functions, packageDefinitions[element.attrs.name])
 			end
 		end
 	end
