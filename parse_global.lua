@@ -65,6 +65,11 @@ local function findXmlElement(root, searchStrings)
 	end
 end
 
+local function simplifyObjectName(string)
+	if string then string:gsub('[^%w_]', '') end
+	return string
+end
+
 -- Calls findGlobals for lua functions in XML-formatted string
 -- Creates temp file, writes string to it, calls findGlobals, deletes temp file
 local function getFnsFromLuaInXml(fns, data)
@@ -200,15 +205,18 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 					getFnsFromLuaInXml(fns, script.children[1].text)
 				end
 
-				packageDefinitions[parent.attrs.name] = fns
+				packageDefinitions[simplifyObjectName(parent.attrs.name)] = fns
 			end
 		end
 
 		for _, element in ipairs(sheetdata.children) do
 			local script = findXmlElement(element, { 'script' })
 			getScriptFromXml(element, script)
-			if templates[element.tag] and templates[element.tag].functions and packageDefinitions[element.attrs.name] then
-				insertTableKeys(templates[element.tag].functions, packageDefinitions[element.attrs.name])
+			if templates[simplifyObjectName(element.tag)] and templates[simplifyObjectName(element.tag)].functions and
+							packageDefinitions[simplifyObjectName(element.attrs.name)] then
+				insertTableKeys(
+								templates[simplifyObjectName(element.tag)].functions, packageDefinitions[simplifyObjectName(element.attrs.name)]
+				)
 			end
 		end
 	end
@@ -227,7 +235,7 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 			elseif script.children[1] and script.children[1].text then
 				getFnsFromLuaInXml(fns, script.children[1].text)
 			end
-			packageDefinitions[element.attrs.name] = fns
+			packageDefinitions[simplifyObjectName(element.attrs.name)] = fns
 		end
 	end
 
@@ -248,8 +256,11 @@ local function matchRelationshipScripts(templates)
 		local inheritedTemplates = template.inherit
 		if inheritedTemplates then
 			for inherit, _ in pairs(inheritedTemplates) do
-				if inherit and templates[inherit] and templates[inherit].functions and template.functions then
-					for functionName, _ in pairs(templates[inherit].functions) do template.functions[functionName] = true end
+				if inherit and templates[simplifyObjectName(inherit)] and templates[simplifyObjectName(inherit)].functions and
+								template.functions then
+					for functionName, _ in pairs(templates[simplifyObjectName(inherit)].functions) do
+						template.functions[functionName] = true
+					end
 				end
 			end
 		end
@@ -273,7 +284,10 @@ local function findTemplateRelationships(templates, packagePath, xmlFiles)
 			elseif script.children[1].text then
 				getFnsFromLuaInXml(templateFunctions, script.children[1].text)
 			end
-			templates[element.attrs.name] = { ['inherit'] = { [parent.tag] = true }, ['functions'] = templateFunctions }
+			templates[simplifyObjectName(element.attrs.name)] = {
+				['inherit'] = { [simplifyObjectName(parent.tag)] = true },
+				['functions'] = templateFunctions,
+			}
 		end
 	end
 
@@ -915,13 +929,15 @@ local function getAPIfunctions(templates)
 	local apiDefinitions = getApiDefinitions()
 
 	for object, data in pairs(apiDefinitions) do
-		if not templates[object] or not templates[object].functions then
-			templates[object] = {}
-			templates[object].functions = {}
-			templates[object].inherit = {}
+		if not templates[simplifyObjectName(object)] or not templates[simplifyObjectName(object)].functions then
+			templates[simplifyObjectName(object)] = {}
+			templates[simplifyObjectName(object)].functions = {}
+			templates[simplifyObjectName(object)].inherit = {}
 		end
-		for fn, _ in pairs(data.functions) do templates[object].functions[fn] = true end
-		for template, _ in pairs(data.inherit) do templates[object].inherit[template] = true end
+		for fn, _ in pairs(data.functions) do templates[simplifyObjectName(object)].functions[fn] = true end
+		for template, _ in pairs(data.inherit) do
+			templates[simplifyObjectName(object)].inherit[simplifyObjectName(template)] = true
+		end
 	end
 end
 
