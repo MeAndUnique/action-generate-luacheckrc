@@ -44,13 +44,30 @@ local function findGlobals(globals, filePath)
 		executeCapture('perl -e \'s/\\xef\\xbb\\xbf//;\' -pi ' .. filePath)
 		local content = executeCapture(string.format('%s -l -p ' .. filePath, 'luac'))
 
-		for line in content:gmatch('[^\r\n]+') do
-			if line:match('SETGLOBAL%s+') and not line:match('%s+;%s+(_)%s*') then
-				local globalName = line:match('\t; (.+)%s*')
-				globals[globalName] = true
+		local function enumerateOutput()
+			local lines = {}
+			for line in content:gmatch('[^\r\n]+') do -- enumerate lines to
+				lines[#lines + 1] = line
+			end
+			return lines
+		end
+
+		local function defineGlobal(lines, lineContent, lineNumber)
+			if lineContent:match('SETGLOBAL%s+') and not lineContent:match('%s+;%s+(_)%s*') then
+				local globalName = lineContent:match('\t; (.+)%s*')
+				globals[globalName] = 'global'
+				if lines[lineNumber-1] and lines[lineNumber-1]:match('NEWTABLE%s+') then
+					globals[globalName] = 'table'
+				end
 			end
 		end
 
+		local lines = enumerateOutput()
+		for lineNumber, lineContent in ipairs(lines) do
+			if lineContent:match('SETGLOBAL%s+') and not lineContent:match('%s+;%s+(_)%s*') then
+				defineGlobal(lines, lineContent, lineNumber)
+			end
+		end
 		return true
 	end
 end
@@ -120,21 +137,32 @@ local function writeDefinitionsToFile(defintitions, package)
 
 		--
 		local function writeSubdefintions(fns)
-			local subdefinition = ''
 
-			for fn, _ in pairs(fns) do
+			local function isTable(string)
+				local otherFields = 'false'
+				if string == 'table' then
+					otherFields = 'true'
+				end
+				return otherFields
+			end
+
+			local subdefinition = ''
+			for fn, type in pairs(fns) do
 				subdefinition = subdefinition .. '\t\t' .. simpleName(fn) ..
-								                ' = {\n\t\t\t\tread_only = false,\n\t\t\t\tother_fields = false,\n\t\t\t},\n\t'
+								                ' = {\n\t\t\t\tread_only = false,\n\t\t\t\tother_fields = ' .. isTable(type) .. ',\n\t\t\t},\n\t'
 			end
 
 			return subdefinition
 		end
 
 		for parent, fns in pairs(defintitions[package]) do
-			local global =
-							(simpleName(parent) .. ' = {\n\t\tread_only = false,\n\t\tfields = {\n\t' .. writeSubdefintions(fns) ..
-											'\t},\n\t},')
-			table.insert(output, global)
+			local simpleParent = simpleName(parent)
+			if simpleParent ~= '' then
+				local global =
+								(simpleName(parent) .. ' = {\n\t\tread_only = false,\n\t\tfields = {\n\t' .. writeSubdefintions(fns) ..
+												'\t},\n\t},')
+				table.insert(output, global)
+			end
 		end
 		table.sort(output)
 	end
