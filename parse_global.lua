@@ -109,16 +109,16 @@ end
 -- Main Functions (called from Main Chunk)
 --
 
--- 
+--
 local function writeDefinitionsToFile(defintitions, package)
 
-	-- 
+	--
 	local function gatherChildFunctions(output)
 
-		-- 
+		-- Remove hyphens and spaces from provided string and return it.
 		local function simpleName(string) return string:gsub('[%- ]', '_') end
 
-		-- 
+		--
 		local function writeSubdefintions(fns)
 			local subdefinition = ''
 
