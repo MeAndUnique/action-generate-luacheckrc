@@ -57,7 +57,7 @@ local function findGlobals(globals, filePath)
 				if lines[prevLine] and lines[prevLine]:match('NEWTABLE%s+') then
 					globals[globalName] = 'table'
 				elseif lines[prevLine] and
-								(lines[prevLine]:match('SETTABLE%s+') or lines[prevLine]:match('LOADK%s+') or
+								(lines[prevLine]:match('SETTABLE%s+') or lines[prevLine]:match('SETLIST%s+') or lines[prevLine]:match('LOADK%s+') or
 												lines[prevLine]:match('LOADBOOL%s+')) then
 					recursiveFindTable(globalName, prevLine - 1)
 				end
