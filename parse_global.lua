@@ -52,20 +52,26 @@ local function findGlobals(globals, filePath)
 			return lines
 		end
 
-		local function defineGlobal(lines, lineContent, lineNumber)
+		local function defineGlobal(lines, lineNumber, lineContent)
+			local function recursiveFindTable(globalName, prevLine)
+				if lines[prevLine] and lines[prevLine]:match('NEWTABLE%s+') then
+					globals[globalName] = 'table'
+				elseif lines[prevLine] and lines[prevLine]:match('SETTABLE%s+') then
+					recursiveFindTable(globalName, prevLine-1)
+				end
+			end
+
 			if lineContent:match('SETGLOBAL%s+') and not lineContent:match('%s+;%s+(_)%s*') then
 				local globalName = lineContent:match('\t; (.+)%s*')
 				globals[globalName] = 'global'
-				if lines[lineNumber-1] and lines[lineNumber-1]:match('NEWTABLE%s+') then
-					globals[globalName] = 'table'
-				end
+				recursiveFindTable(globalName, lineNumber-1)
 			end
 		end
 
 		local lines = enumerateOutput()
 		for lineNumber, lineContent in ipairs(lines) do
 			if lineContent:match('SETGLOBAL%s+') and not lineContent:match('%s+;%s+(_)%s*') then
-				defineGlobal(lines, lineContent, lineNumber)
+				defineGlobal(lines, lineNumber, lineContent)
 			end
 		end
 		return true
