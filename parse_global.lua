@@ -56,15 +56,17 @@ local function findGlobals(globals, filePath)
 			local function recursiveFindTable(globalName, prevLine)
 				if lines[prevLine] and lines[prevLine]:match('NEWTABLE%s+') then
 					globals[globalName] = 'table'
-				elseif lines[prevLine] and lines[prevLine]:match('SETTABLE%s+') then
-					recursiveFindTable(globalName, prevLine-1)
+				elseif lines[prevLine] and
+								(lines[prevLine]:match('SETTABLE%s+') or lines[prevLine]:match('LOADK%s+') or
+												lines[prevLine]:match('LOADBOOL%s+')) then
+					recursiveFindTable(globalName, prevLine - 1)
 				end
 			end
 
 			if lineContent:match('SETGLOBAL%s+') and not lineContent:match('%s+;%s+(_)%s*') then
 				local globalName = lineContent:match('\t; (.+)%s*')
 				globals[globalName] = 'global'
-				recursiveFindTable(globalName, lineNumber-1)
+				recursiveFindTable(globalName, lineNumber - 1)
 			end
 		end
 
@@ -146,16 +148,15 @@ local function writeDefinitionsToFile(defintitions, package)
 
 			local function isTable(string)
 				local otherFields = 'false'
-				if string == 'table' then
-					otherFields = 'true'
-				end
+				if string == 'table' then otherFields = 'true' end
 				return otherFields
 			end
 
 			local subdefinition = ''
 			for fn, type in pairs(fns) do
 				subdefinition = subdefinition .. '\t\t' .. simpleName(fn) ..
-								                ' = {\n\t\t\t\tread_only = false,\n\t\t\t\tother_fields = ' .. isTable(type) .. ',\n\t\t\t},\n\t'
+								                ' = {\n\t\t\t\tread_only = false,\n\t\t\t\tother_fields = ' .. isTable(type) ..
+								                ',\n\t\t\t},\n\t'
 			end
 
 			return subdefinition
