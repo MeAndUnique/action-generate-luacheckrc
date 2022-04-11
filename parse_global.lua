@@ -418,7 +418,7 @@ local function getAPIfunctions(templates)
 	local apiDefinitions = {}
 	local fgApiFile = io.open('./fg_apis.lua', 'r')
 	if fgApiFile then
-		apiDefinitions = dofile('fg_apis.lua')
+		apiDefinitions = dofile('./fg_apis.lua')
 		fgApiFile:close()
 	end
 
