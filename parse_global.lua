@@ -354,8 +354,9 @@ local function getPackageName(baseXmlFile, packageName)
 
 	-- Trims package name to prevent issues with luacheckrc
 	local function simplifyText(text)
-		text = text:gsub('.+:', '') -- remove prefix
-		text = text:gsub('%(.+%)', '') -- remove parenthetical
+		text = text:gsub('.*:%s', '') -- remove prefix
+		text = text:gsub(',.*', '') -- shorten name
+		text = text:gsub('%(.*%)', '') -- remove parenthetical
 		text = text:gsub('%W', '') -- remove non alphanumeric
 		return text
 	end
