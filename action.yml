@@ -35,7 +35,7 @@ runs:
       shell: bash
 
     - name: Parse globals
-      run: lua $GITHUB_ACTION_PATH/parse_global.lua
+      run: lua $GITHUB_ACTION_PATH/parse_global.lua $GITHUB_ACTION_PATH/fg_apis.lua
       shell: bash
 
     - name: Generate .luacheckrc
