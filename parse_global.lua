@@ -415,19 +415,19 @@ end
 
 -- Adds FG API functions and in-built templates to the templates definition list.
 local function getAPIfunctions(templates)
-	local apiDefinitions = dofile('./fg_apis.lua') or {}
+	local apiDefinitions = dofile('./fg_apis.lua')
 
-	-- Ensures that tempalte has required child tables available for writing.
-	local function setupTemplate(template)
-		if not template or not template.functions then
-			template = {}
-			template.functions = {}
-			template.inherit = {}
+	-- Ensures that the template has the required child tables available for writing.
+	local function setupTemplate(object)
+		if not templates[object] or not templates[object].functions or not templates[object].functions then
+			templates[object] = {}
+			templates[object].functions = {}
+			templates[object].inherit = {}
 		end
 	end
 
 	for object, data in pairs(apiDefinitions) do
-		setupTemplate(template)
+		setupTemplate(object)
 		for fn, _ in pairs(data.functions) do templates[object].functions[fn] = true end
 		for template, _ in pairs(data.inherit) do templates[object].inherit[template] = true end
 	end
@@ -455,9 +455,9 @@ for _, packageTypeData in ipairs(packages) do
 
 		print(string.format('Determining templates for %s.\n', shortPkgName))
 		findTemplateRelationships(templates, packagePath, interfaceXmlFiles)
-		getAPIfunctions(templates)
-		matchRelationshipScripts(templates)
 	end
+	getAPIfunctions(templates)
+	matchRelationshipScripts(templates)
 
 	print('Template search complete; now finding scripts.\n')
 	for _, packageName in ipairs(packageTypeData.packageList) do
@@ -466,12 +466,11 @@ for _, packageTypeData in ipairs(packages) do
 		local baseXmlFile = findBaseXml(packagePath, packageTypeData.baseFile)
 		local shortPkgName = getPackageName(baseXmlFile, packageName)
 
-		print(string.format('Creating definition entry %s.', shortPkgName))
-		packageTypeData.definitions[shortPkgName] = {}
-
 		print(string.format('Finding interface XML files in %s.', shortPkgName))
 		local interfaceXmlFiles = {}
 		findXmls(interfaceXmlFiles, baseXmlFile, packagePath)
+
+		packageTypeData.definitions[shortPkgName] = {}
 
 		print(string.format('Finding interface object scripts and adding appropriate templates for %s.', shortPkgName))
 		findInterfaceScripts(
