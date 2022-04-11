@@ -415,7 +415,7 @@ end
 
 -- Adds FG API functions and in-built templates to the templates definition list.
 local function getAPIfunctions(templates)
-	local apiDefinitions = dofile('./fg_apis.lua')
+	local apiDefinitions = dofile('./fg_apis.lua') or dofile('$GITHUB_ACTION_PATH/fg_apis.lua')
 
 	-- Ensures that the template has the required child tables available for writing.
 	local function setupTemplate(object)
