@@ -415,7 +415,12 @@ end
 
 -- Adds FG API functions and in-built templates to the templates definition list.
 local function getAPIfunctions(templates)
-	local apiDefinitions = dofile('fg_apis.lua')
+	local apiDefinitions = {}
+	local fgApiFile = io.open('./fg_apis.lua', 'r')
+	if fgApiFile then
+		apiDefinitions = dofile('fg_apis.lua')
+		fgApiFile:close()
+	end
 
 	-- Ensures that the template has the required child tables available for writing.
 	local function setupTemplate(object)
