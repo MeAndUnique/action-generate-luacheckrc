@@ -456,9 +456,9 @@ for _, packageTypeData in ipairs(packages) do
 
 		print(string.format('Determining templates for %s.\n', shortPkgName))
 		findTemplateRelationships(templates, packagePath, interfaceXmlFiles)
+		getAPIfunctions(templates)
+		matchRelationshipScripts(templates)
 	end
-	getAPIfunctions(templates)
-	matchRelationshipScripts(templates)
 
 	print('Template search complete; now finding scripts.\n')
 	for _, packageName in ipairs(packageTypeData.packageList) do
