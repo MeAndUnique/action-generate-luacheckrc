@@ -134,45 +134,14 @@ end
 -- Write compiled defintions to globals directory for use by generate.lua.
 local function writeDefinitionsToFile(defintitions, package, version)
 
-	-- Rewrite definitions in format of lucheckrc, add to output, and sort output.
-	local function gatherChildFunctions(output)
-
-		-- Remove hyphens and spaces from provided string and return it.
-		local function simpleName(string) return string:gsub('[%- ]', '_') end
-
-		-- Rewrite child functions of script/object definitions in format of luacheckrc and return.
-		local function writeSubdefintions(fns)
-			local subdefinition = ''
-			for fn, type in pairs(fns) do
-				subdefinition = subdefinition .. '\t\t' .. simpleName(fn) .. ' = {\n\t\t\t\tread_only = false,\n\t\t\t\tother_fields = ' ..
-								                tostring(type == 'table') .. ',\n\t\t\t},\n\t'
-			end
-
-			return subdefinition
-		end
-
-		for parent, fns in pairs(defintitions[package]) do
-			local simpleParent = simpleName(parent)
-			if simpleParent ~= '' then
-				local global = (simpleName(parent) .. ' = {\n\t\tread_only = false,\n\t\tfields = {\n\t' .. writeSubdefintions(fns) .. '\t},\n\t},')
-				table.insert(output, global)
-			end
-		end
-		table.sort(output)
-	end
-
-	local output = {}
-	gatherChildFunctions(output)
-
 	local dir = datapath .. 'globals/'
 	lfs.mkdir(dir)
-	local filePath = dir .. package .. '.luacheckrc_std'
-	local destFile = assert(io.open(filePath, 'w'), 'Error opening file ' .. filePath)
-	if version then destFile:write('# ' .. version .. '\n') end
-	destFile:write('globals = {\n')
-	for _, var in ipairs(output) do destFile:write('\t' .. var .. '\n') end
 
-	destFile:write('\n},\n')
+	local filePath = dir .. package .. '_json.lua'
+	local destFile = assert(io.open(filePath, 'w'), 'Error opening file ' .. filePath)
+
+	destFile:write(require('json/json').encode({ package = defintitions }))
+
 	destFile:close()
 end
 
