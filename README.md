@@ -55,10 +55,6 @@ jobs:
         target-path: '.luacheckrc'
         # Optional. This is the default value.
         header-path: '.luacheckrc_header'
-        # Optional. Must begin with a +.
-        # Correct names are the lowercase names of whatever folders you clone into.
-        # See the DND5E and CoinsWeight examples above.
-        std: '+dnd5e+coinsweight'
 
     - name: Create pull request
       uses: peter-evans/create-pull-request@v4
@@ -72,7 +68,6 @@ jobs:
 
 * `target-path`: Path to generated `.luacheckrc`. Defaults to `.luacheckrc`.
 * `header-path`: Path to `.luacheckrc` header, where you can put your own settings in. Defaults to `.luacheckrc_header`.
-* `std`: A string such as `+dnd35e+pfrpg` which will pre-select definitions in the generated file. 
 
 ## License
 The Unlicense
