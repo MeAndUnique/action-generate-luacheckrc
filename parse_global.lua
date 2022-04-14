@@ -6,13 +6,7 @@ local parseXmlFile = require('xmlparser').parseFile -- xml file parser
 
 -- Package Types
 local packages = {
-	[1] = {
-		['name'] = 'rulesets',
-		['path'] = datapath .. 'rulesets/',
-		['baseFile'] = 'base.xml',
-		['definitions'] = {},
-		['packageList'] = {},
-	},
+	[1] = { ['name'] = 'rulesets', ['path'] = datapath .. 'rulesets/', ['baseFile'] = 'base.xml', ['definitions'] = {}, ['packageList'] = {} },
 	[2] = {
 		['name'] = 'extensions',
 		['path'] = datapath .. 'extensions/',
@@ -62,8 +56,8 @@ local function findGlobals(globals, filePath)
 				if lines[prevLine] and lines[prevLine]:match('NEWTABLE%s+') then
 					globals[globalName] = 'table'
 				elseif lines[prevLine] and
-								(lines[prevLine]:match('SETTABLE%s+') or lines[prevLine]:match('SETLIST%s+') or
-												lines[prevLine]:match('LOADK%s+') or lines[prevLine]:match('LOADBOOL%s+')) then
+								(lines[prevLine]:match('SETTABLE%s+') or lines[prevLine]:match('SETLIST%s+') or lines[prevLine]:match('LOADK%s+') or
+												lines[prevLine]:match('LOADBOOL%s+')) then
 					recursiveFindTable(globalName, prevLine - 1)
 				end
 			end
@@ -77,9 +71,7 @@ local function findGlobals(globals, filePath)
 
 		local lines = enumerateOutput()
 		for lineNumber, lineContent in ipairs(lines) do
-			if lineContent:match('SETGLOBAL%s+') and not lineContent:match('%s+;%s+(_)%s*') then
-				defineGlobal(lines, lineNumber, lineContent)
-			end
+			if lineContent:match('SETGLOBAL%s+') and not lineContent:match('%s+;%s+(_)%s*') then defineGlobal(lines, lineNumber, lineContent) end
 		end
 		return true
 	end
@@ -140,7 +132,7 @@ end
 --
 
 -- Write compiled defintions to globals directory for use by generate.lua.
-local function writeDefinitionsToFile(defintitions, package)
+local function writeDefinitionsToFile(defintitions, package, version)
 
 	-- Rewrite definitions in format of lucheckrc, add to output, and sort output.
 	local function gatherChildFunctions(output)
@@ -152,9 +144,8 @@ local function writeDefinitionsToFile(defintitions, package)
 		local function writeSubdefintions(fns)
 			local subdefinition = ''
 			for fn, type in pairs(fns) do
-				subdefinition = subdefinition .. '\t\t' .. simpleName(fn) ..
-								                ' = {\n\t\t\t\tread_only = false,\n\t\t\t\tother_fields = ' .. tostring(type == 'table') ..
-								                ',\n\t\t\t},\n\t'
+				subdefinition = subdefinition .. '\t\t' .. simpleName(fn) .. ' = {\n\t\t\t\tread_only = false,\n\t\t\t\tother_fields = ' ..
+								                tostring(type == 'table') .. ',\n\t\t\t},\n\t'
 			end
 
 			return subdefinition
@@ -163,9 +154,7 @@ local function writeDefinitionsToFile(defintitions, package)
 		for parent, fns in pairs(defintitions[package]) do
 			local simpleParent = simpleName(parent)
 			if simpleParent ~= '' then
-				local global =
-								(simpleName(parent) .. ' = {\n\t\tread_only = false,\n\t\tfields = {\n\t' .. writeSubdefintions(fns) ..
-												'\t},\n\t},')
+				local global = (simpleName(parent) .. ' = {\n\t\tread_only = false,\n\t\tfields = {\n\t' .. writeSubdefintions(fns) .. '\t},\n\t},')
 				table.insert(output, global)
 			end
 		end
@@ -179,6 +168,7 @@ local function writeDefinitionsToFile(defintitions, package)
 	lfs.mkdir(dir)
 	local filePath = dir .. package .. '.luacheckrc_std'
 	local destFile = assert(io.open(filePath, 'w'), 'Error opening file ' .. filePath)
+	if version then destFile:write('# ' .. version .. '\n') end
 	destFile:write('globals = {\n')
 	for _, var in ipairs(output) do destFile:write('\t' .. var .. '\n') end
 
@@ -222,9 +212,7 @@ local function findInterfaceScripts(packageDefinitions, templates, xmlFiles, pac
 	local function xmlScriptSearch(sheetdata)
 
 		-- Copies keys from sourceTable to destinationTable with boolean value true
-		local function insertTableKeys(sourceTable, destinationTable)
-			for fn, _ in pairs(sourceTable) do destinationTable[fn] = true end
-		end
+		local function insertTableKeys(sourceTable, destinationTable) for fn, _ in pairs(sourceTable) do destinationTable[fn] = true end end
 
 		-- When supplied with a lua-xmlparser table for the <script> element,
 		-- this function adds any functions from it into a supplied table.
@@ -318,9 +306,7 @@ local function findTemplateRelationships(templates, packagePath, xmlFiles)
 	for _, xmlPath in pairs(xmlFiles) do
 		local root = findXmlElement(parseXmlFile(xmlPath), { 'root' })
 		for _, element in ipairs(root.children) do
-			if element.tag == 'template' then
-				for _, template in ipairs(element.children) do findTemplateScript(template, element) end
-			end
+			if element.tag == 'template' then for _, template in ipairs(element.children) do findTemplateScript(template, element) end end
 		end
 	end
 end
@@ -351,6 +337,7 @@ end
 -- Determine best package name
 -- Returns as a lowercase string
 local function getPackageName(baseXmlFile, packageName)
+	local version
 
 	-- Trims package name to prevent issues with luacheckrc
 	local function simplifyText(text)
@@ -366,15 +353,20 @@ local function getPackageName(baseXmlFile, packageName)
 	local function getSimpleName()
 
 		local altName = { '' }
-		local xmlProperties = findXmlElement(findXmlElement(parseXmlFile(baseXmlFile), { 'root' }), { 'properties' })
+		local xmlRoot = findXmlElement(parseXmlFile(baseXmlFile), { 'root' })
+		local xmlProperties = findXmlElement(xmlRoot, { 'properties' })
 		if xmlProperties then
 			for _, element in ipairs(xmlProperties.children) do
 				if element.tag == 'author' then
 					table.insert(altName, 2, simplifyText(element.children[1].text))
 				elseif element.tag == 'name' then
 					table.insert(altName, 1, simplifyText(element.children[1].text))
+				elseif element.tag == 'version' then
+					version = 'version number ' .. element.children[1].text
 				end
 			end
+		else
+			version = 'release number ' .. xmlRoot.attrs.release
 		end
 
 		return table.concat(altName)
@@ -386,7 +378,7 @@ local function getPackageName(baseXmlFile, packageName)
 	-- prepend 'def' if 1st character isn't a-z
 	if string.sub(shortPackageName, 1, 1):match('%A') then shortPackageName = 'def' .. shortPackageName end
 
-	return shortPackageName:lower()
+	return shortPackageName:lower(), version
 end
 
 -- Searches for file by name in supplied directory
@@ -406,9 +398,7 @@ local function findAllPackages(list, path)
 	lfs.mkdir(path) -- if not found, create path to avoid errors
 
 	for file in lfs.dir(path) do
-		if lfs.attributes(path .. '/' .. file, 'mode') == 'directory' then
-			if file ~= '.' and file ~= '..' then table.insert(list, file) end
-		end
+		if lfs.attributes(path .. '/' .. file, 'mode') == 'directory' then if file ~= '.' and file ~= '..' then table.insert(list, file) end end
 	end
 
 	table.sort(list)
@@ -448,7 +438,7 @@ for _, packageTypeData in ipairs(packages) do
 		print(string.format('Found %s. Getting details for template search.', packageName))
 		local packagePath = { datapath, packageTypeData.name, '/', packageName }
 		local baseXmlFile = findBaseXml(packagePath, packageTypeData.baseFile)
-		local shortPkgName = getPackageName(baseXmlFile, packageName)
+		local shortPkgName, _ = getPackageName(baseXmlFile, packageName)
 
 		print(string.format('Finding interface XML files in %s for template search.', shortPkgName))
 		local interfaceXmlFiles = {}
@@ -465,7 +455,7 @@ for _, packageTypeData in ipairs(packages) do
 		print(string.format('Found %s. Getting details.', packageName))
 		local packagePath = { datapath, packageTypeData.name, '/', packageName }
 		local baseXmlFile = findBaseXml(packagePath, packageTypeData.baseFile)
-		local shortPkgName = getPackageName(baseXmlFile, packageName)
+		local shortPkgName, version = getPackageName(baseXmlFile, packageName)
 
 		print(string.format('Finding interface XML files in %s.', shortPkgName))
 		local interfaceXmlFiles = {}
@@ -475,14 +465,13 @@ for _, packageTypeData in ipairs(packages) do
 
 		print(string.format('Finding interface object scripts and adding appropriate templates for %s.', shortPkgName))
 		findInterfaceScripts(
-						packageTypeData.definitions[shortPkgName], templates, interfaceXmlFiles,
-						{ datapath, packageTypeData.name, '/', packageName }
+						packageTypeData.definitions[shortPkgName], templates, interfaceXmlFiles, { datapath, packageTypeData.name, '/', packageName }
 		)
 
 		print(string.format('Finding named scripts in %s.', shortPkgName))
 		findNamedLuaScripts(packageTypeData.definitions[shortPkgName], baseXmlFile, packagePath)
 
 		print(string.format('Writing definitions for %s.\n', shortPkgName))
-		writeDefinitionsToFile(packageTypeData.definitions, shortPkgName)
+		writeDefinitionsToFile(packageTypeData.definitions, shortPkgName, version)
 	end
 end
