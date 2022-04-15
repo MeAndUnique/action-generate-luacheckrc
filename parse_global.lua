@@ -168,7 +168,7 @@ local function writeDefinitionsToFile(defintitions, package, version)
 	lfs.mkdir(dir)
 	local filePath = dir .. package .. '.luacheckrc_std'
 	local destFile = assert(io.open(filePath, 'w'), 'Error opening file ' .. filePath)
-	if version then destFile:write('# ' .. version .. '\n') end
+	-- if version then destFile:write('# ' .. version .. '\n') end
 	destFile:write('globals = {\n')
 	for _, var in ipairs(output) do destFile:write('\t' .. var .. '\n') end
 
